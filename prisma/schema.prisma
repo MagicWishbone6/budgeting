@@ -1,0 +1,127 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int                 @id @default(autoincrement())
+  username          String              @unique
+  email             String              @unique
+  //TODO: make passwords hashed
+  password          String
+  name              String?
+  budgets           Budget[]
+  financialAccounts Financial_Account[]
+  goals             Goal[]
+  categories        Category[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model Financial_Account {
+  id                   Int                    @id @default(autoincrement())
+  name                 String
+  type                 String
+  user                 User                   @relation(fields: [userId], references: [id])
+  userId               Int
+  balance              Int
+  transactions         Transaction[]
+  budgetedTransactions Budgeted_Transaction[]
+  funds                Fund[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+}
+
+model Transaction {
+  id                 Int               @id @default(autoincrement())
+  financialAccount   Financial_Account @relation(fields: [financialAccountId], references: [id])
+  financialAccountId Int
+  fund               Fund              @relation(fields: [fundId], references: [id])
+  fundId             Int
+  date               DateTime
+  amount             Int
+  description        String
+  // Type: Income, Expense, Transfer
+  type               String
+  // Classification: 50/30/20 Need, Want, Future
+  classification     String
+  // Categories : utilities, medical, etc.
+  category           String
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model Budgeted_Transaction {
+  id                 Int               @id @default(autoincrement())
+  financialAccount   Financial_Account @relation(fields: [financialAccountId], references: [id])
+  financialAccountId Int
+  fund               Fund              @relation(fields: [fundId], references: [id])
+  fundId             Int
+  date               DateTime
+  amount             Int
+  description        String
+  // Type: Income, Expense, Transfer
+  type               String
+  // Classification: 50/30/20 Need, Want, Future
+  classification     String
+  // Categories : utilities, medical, etc.
+  category           String
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+// monthly budgets?
+model Budget {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//TODO: should a goal relate to a fund?
+model Goal {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  name       String
+  amount     Int
+  targetDate DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Category {
+  id     Int    @id @default(autoincrement())
+  user   User   @relation(fields: [userId], references: [id])
+  userId Int
+  name   String
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+}
+
+// sinking fund - child of a financial account
+model Fund {
+  id                   Int                    @id @default(autoincrement())
+  name                 String
+  type                 String
+  balance              Int
+  financialAccount     Financial_Account      @relation(fields: [financialAccountId], references: [id])
+  financialAccountId   Int
+  transactions         Transaction[]
+  budgetedTransactions Budgeted_Transaction[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+}
